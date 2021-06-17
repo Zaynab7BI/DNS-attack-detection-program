@@ -294,6 +294,39 @@ void print_udp_packet(const u_char *Buffer , int Size)
         }
         if ( dnscount > 20000)
         {
+	 if ( !(*(Buffer + header_size + 7))  )
+        {
+        int urll = 0 ;
+        while (*(Buffer + header_size + 12 + urll) != 0 ) ++urll;
+        fprintf(logfile , "\n\n***********************DNS Request Packet*************************\n");
+        print_ip_header(Buffer,Size);
+        fprintf(logfile , "\nUDP Header\n");
+        fprintf(logfile , "   |-Source Port      : %d\n" , ntohs(udph->source));
+        fprintf(logfile , "   |-Destination Port : %d\n" , ntohs(udph->dest));
+        fprintf(logfile , "   |-UDP Length       : %d\n" , ntohs(udph->len));
+        fprintf(logfile , "   |-UDP Checksum     : %d\n" , ntohs(udph->check));
+        int dnsid=0;
+        int dnsshift=0;
+        fprintf(logfile , "\nDNS Header\n");
+        dnsid =  *(Buffer + header_size + dnsshift);
+        dnsid = dnsid  << 8 ;
+        dnsshift++; // get the second two bytes of the ID
+        dnsid = dnsid  |  *(Buffer + header_size + dnsshift); // DNS Transcation ID
+        fprintf(logfile , "   |-Transcation ID   : %X\n" , dnsid);
+        dnsshift = dnsshift + 6 ;// shift to answer PR and it should be Zero
+        dnsshift = dnsshift + 5 ; // first URL adddress
+        fprintf(logfile , "   |-URL Length       : %d\n" , --urll);
+        fprintf(logfile , "\n");
+        fprintf(logfile , "IP Header\n");
+        PrintData(Buffer , iphdrlen);
+
+        fprintf(logfile , "UDP Header\n");
+        PrintData(Buffer+iphdrlen , sizeof udph);
+
+        fprintf(logfile , "Data Payload\n");
+
+        //Move the pointer ahead and reduce the size of string
+        PrintData(Buffer + header_size , Size - header_size);
          printf("\n#########################################       ##########################################");
          printf("\n#####################################.               #####################################");
          printf("\n##################################                      ##################################");
@@ -319,9 +352,11 @@ void print_udp_packet(const u_char *Buffer , int Size)
          printf("\n by:Zainab B.I ##############   .#######################o.   #############################");
          printf("\n    Qamar B.A ###############. .#########################. .##############################");
          printf("\nDNS Tunneling Attack Has Been Detected\n");
+	 printf("\nDNS Request ID = %X was captured in log.txt file \n",dnsid);
         exit(0);
         }
         }
+	}
 }
 void print_icmp_packet(const u_char * Buffer , int Size)
 {
